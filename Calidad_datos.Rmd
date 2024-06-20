@@ -1,0 +1,148 @@
+---
+title: "Calidad de Datos de BD Niños"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+    code_folding: hide
+    highlight: pygments
+    number_sections: yes
+    toc_float: yes
+  pdf_document: default  
+date: "`r Sys.Date()`"
+---
+
+```{css toc-content, echo = FALSE}
+#TOC {
+  #position: fixed;
+  #overflow:auto
+  left: 20px;
+  margin: 20px 0px 25px 0px;
+}
+
+.main-container {
+    margin-left: 200px;
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<img src="R.png" style="position:absolute;top:0px;right:0px;" />
+
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(plotly)
+library(lubridate)
+library(ggplot2)
+library(DT)
+```
+
+```{r, message = FALSE, warning = FALSE}
+
+
+
+```
+
+```{r datos, include=FALSE}
+
+resultados <- read_excel("C:/Users/cuadr/OneDrive/Desktop/CUADRAO PUNTOS/datos_ninos.xlsx", sheet = "resultados")
+censo_oficial <- read_excel("C:/Users/cuadr/OneDrive/Desktop/CUADRAO PUNTOS/datos_ninos.xlsx", sheet = "censo-oficial")
+
+df = resultados %>% inner_join(censo_oficial, by = "dni")
+
+```
+
+# Características inherentes
+
+Teniendo en cuenta la base de datos, considero que se deben usar las siguientes características inherentes para mejorar el análisis y la eficiencia operativa.
+
+
+
+## Completitud
+Se puede observar en la df que en la columna de talla, peso y parásitos hay datos que estan incompletos.
+
+```{r}
+
+```
+
+## Consistencia
+Por la falta de algunos datos en las columnas que vamos a revisar, consideraremos que si es nulo será 'No consistente'. 
+
+
+Para hemoglobina será 'Consistente' cuando el valor este en el rango de 9 a 17, de no ser así se considerará 'No consistente'.
+
+```{r}
+p = df %>% 
+  mutate(
+    consistencia_hemoglobina = case_when(
+      is.na(hemoglobina) ~ "No consistente", 
+      (hemoglobina >= 9) & (hemoglobina <= 17) ~ "Consistente",
+      TRUE ~ "No consistente"
+    )
+  ) %>%
+  count(consistencia_hemoglobina)
+
+datatable(p, options = list(scrollX = TRUE)) 
+```
+
+
+Para peso será 'Consistente' cuando el valor este en el rango de 28 a 55, de no ser así se considerará 'No consistente'.
+```{r}
+p = df %>% 
+  mutate(
+    consistencia_peso = case_when(
+      is.na(peso) ~ "No consistente", 
+      (peso >= 28) & (peso <= 55) ~ "Consistente",
+      TRUE ~ "No consistente"
+    )
+  ) %>%
+  count(consistencia_peso)
+
+datatable(p, options = list(scrollX = TRUE))
+```
+
+
+Para talla será 'Consistente' cuando el valor este en el rango de 1.10 a 1.50, de no ser así se considerará 'No consistente'.
+```{r}
+p = df %>% 
+  mutate(
+    consistencia_talla = case_when(
+      is.na(talla) ~ "No consistente", 
+      (talla >= 1.10) & (talla <= 1.50) ~ "Consistente",
+      TRUE ~ "No consistente"
+    )
+  ) %>%
+  count(consistencia_talla)
+
+datatable(p, options = list(scrollX = TRUE))
+```
+
+
+## Actualidad
+Teniendo en cuenta la fecha de 01/06/2024 como fecha que se hace la verificacion de datos, hallaremos la edad de cada menor. 
+```{r}
+df$date_birth <- as.Date(df$date_birth)
+fecha_actual <- as.Date("2024-06-01")
+df$edad <- round(as.numeric(difftime(fecha_actual, df$date_birth, units = "weeks")) / 52.25)
+datatable(df, options = list(scrollX = TRUE))
+```
+
+# Caracteristicas dependientes del sistema
+Considero que se deben de usar las siguientes características dependientes:
+
+## Portabilidad
+Considero que se debe de almacenar como .rds , pues los archivos .rds son particularmente útiles porque permiten almacenar y recuperar objetos R de manera eficiente, manteniendo su estructura original.
+```{r}
+saveRDS(df, "DanielaCuadraoDB.rds")
+```
+
+
+## Interoperabilidad
+Se usa el markdown.
+```{r}
+```
